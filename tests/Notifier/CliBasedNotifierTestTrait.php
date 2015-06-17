@@ -35,24 +35,96 @@ trait CliBasedNotifierTestTrait
         $this->assertEquals($supported, $this->getNotifier()->isSupported());
     }
 
-    /**
-     * @param Notification $notification
-     * @param string       $expectedCommandLine
-     *
-     * @dataProvider provideValidNotifications
-     */
-    public function testConfigureProcessAcceptAnyValidNotification(Notification $notification, $expectedCommandLine)
+    protected function assertCommandLine($expectedCommandLine, $notification)
     {
+        $processBuilder = new ProcessBuilder();
+        $processBuilder->setPrefix(self::BINARY);
+
+        $this->invokeMethod($this->getNotifier(), 'configureProcess', [$processBuilder, $notification]);
+
+        $this->assertEquals($expectedCommandLine, $processBuilder->getProcess()->getCommandLine());
+    }
+
+    public function testSendThrowsExceptionWhenNotificationDoesntHaveBody()
+    {
+        $notifier = $this->getNotifier();
+
+        $notification = new Notification();
+
         try {
-            $processBuilder = new ProcessBuilder();
-            $processBuilder->setPrefix(self::BINARY);
-
-            $this->invokeMethod($this->getNotifier(), 'configureProcess', [$processBuilder, $notification]);
-
-            $this->assertEquals($expectedCommandLine, $processBuilder->getProcess()->getCommandLine());
+            $notifier->send($notification);
+            $this->fail('Expected a InvalidNotificationException');
         } catch (\Exception $e) {
-            $this->fail($e->getMessage());
+            $this->assertInstanceOf('Joli\JoliNotif\Exception\InvalidNotificationException', $e);
         }
+    }
+
+    public function testSendThrowsExceptionWhenNotificationHasAnEmptyBody()
+    {
+        $notifier = $this->getNotifier();
+
+        $notification = (new Notification())
+            ->setBody('')
+        ;
+
+        try {
+            $notifier->send($notification);
+            $this->fail('Expected a InvalidNotificationException');
+        } catch (\Exception $e) {
+            $this->assertInstanceOf('Joli\JoliNotif\Exception\InvalidNotificationException', $e);
+        }
+    }
+
+    public function testConfigureProcessAcceptNotificationWithOnlyABody()
+    {
+        $notification = (new Notification())
+            ->setBody('I\'m the notification body')
+        ;
+
+        $this->assertCommandLine(
+            $this->getExpectedCommandLineForNotification(),
+            $notification
+        );
+    }
+
+    public function testConfigureProcessAcceptNotificationWithABodyAndATitle()
+    {
+        $notification = (new Notification())
+            ->setBody('I\'m the notification body')
+            ->setTitle('I\'m the notification title')
+        ;
+
+        $this->assertCommandLine(
+            $this->getExpectedCommandLineForNotificationWithATitle(),
+            $notification
+        );
+    }
+
+    public function testConfigureProcessAcceptNotificationWithABodyAndAnIcon()
+    {
+        $notification = (new Notification())
+            ->setBody('I\'m the notification body')
+            ->setIcon('/home/toto/Images/my-icon.png')
+        ;
+
+        $this->assertCommandLine(
+            $this->getExpectedCommandLineForNotificationWithAnIcon(),
+            $notification
+        );
+    }
+
+    public function testConfigureProcessAcceptNotificationWithAllOptions()
+    {
+        $notification = (new Notification())
+            ->setBody('I\'m the notification body')
+            ->setTitle('I\'m the notification title')
+            ->setIcon('/home/toto/Images/my-icon.png')
+        ;
+
+        $this->assertCommandLine(
+            $this->getExpectedCommandLineForNotificationWithAllOptions(),
+            $notification
+        );
     }
 
     /**
@@ -74,66 +146,4 @@ trait CliBasedNotifierTestTrait
      * @return string
      */
     abstract protected function getExpectedCommandLineForNotificationWithAllOptions();
-
-    /**
-     * @return array
-     */
-    public function provideValidNotifications()
-    {
-        return [
-            [
-                (new Notification())
-                    ->setBody('I\'m the notification body'),
-                $this->getExpectedCommandLineForNotification(),
-            ],
-            [
-                (new Notification())
-                    ->setBody('I\'m the notification body')
-                    ->setTitle('I\'m the notification title'),
-                $this->getExpectedCommandLineForNotificationWithATitle(),
-            ],
-            [
-                (new Notification())
-                    ->setBody('I\'m the notification body')
-                    ->setIcon('/home/toto/Images/my-icon.png'),
-                $this->getExpectedCommandLineForNotificationWithAnIcon(),
-            ],
-            [
-                (new Notification())
-                    ->setBody('I\'m the notification body')
-                    ->setTitle('I\'m the notification title')
-                    ->setIcon('/home/toto/Images/my-icon.png'),
-                $this->getExpectedCommandLineForNotificationWithAllOptions(),
-            ],
-        ];
-    }
-
-    public function testSendThrowsExceptionWhenNotificationDoesntHaveBody()
-    {
-        $notifier = $this->getNotifier();
-
-        $notification = new Notification();
-
-        try {
-            $notifier->send($notification);
-            $this->fail('Expected a InvalidNotificationException');
-        } catch (\Exception $e) {
-            $this->assertInstanceOf('Joli\JoliNotif\Exception\InvalidNotificationException', $e);
-        }
-    }
-
-    public function testSendThrowsExceptionWhenNotificationHasAnEmptyBody()
-    {
-        $notifier = $this->getNotifier();
-
-        $notification = new Notification();
-        $notification->setBody('');
-
-        try {
-            $notifier->send($notification);
-            $this->fail('Expected a InvalidNotificationException');
-        } catch (\Exception $e) {
-            $this->assertInstanceOf('Joli\JoliNotif\Exception\InvalidNotificationException', $e);
-        }
-    }
 }
