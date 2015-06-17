@@ -43,11 +43,11 @@ class ToasterNotifier extends CliBasedNotifier implements BinaryProvider
     protected function configureProcess(ProcessBuilder $processBuilder, Notification $notification)
     {
         $processBuilder->add('-m');
-        $processBuilder->add($notification->getBody());
+        $processBuilder->add(utf8_decode($notification->getBody()));
 
         if ($notification->getTitle()) {
             $processBuilder->add('-t');
-            $processBuilder->add($notification->getTitle());
+            $processBuilder->add(utf8_decode($notification->getTitle()));
         }
 
         if ($notification->getIcon()) {

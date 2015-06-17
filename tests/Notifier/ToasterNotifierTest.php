@@ -11,6 +11,7 @@
 
 namespace Joli\JoliNotif\tests\Notifier;
 
+use Joli\JoliNotif\Notification;
 use Joli\JoliNotif\Notifier;
 use Joli\JoliNotif\Notifier\ToasterNotifier;
 
@@ -70,5 +71,18 @@ class ToasterNotifierTest extends NotifierTestCase
     protected function getExpectedCommandLineForNotificationWithAllOptions()
     {
         return "'toast' '-m' 'I'\\''m the notification body' '-t' 'I'\\''m the notification title' '-p' '/home/toto/Images/my-icon.png'";
+    }
+
+    public function testSendConvertsUtf8ToISO88591()
+    {
+        $notification = (new Notification())
+            ->setTitle('test utf8 àêï')
+            ->setBody('£$€')
+        ;
+
+        $this->assertCommandLine(
+            "'toast' '-m' '".utf8_decode('£$€')."' '-t' '".utf8_decode('test utf8 àêï')."'",
+            $notification
+        );
     }
 }

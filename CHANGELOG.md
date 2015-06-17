@@ -4,6 +4,7 @@
 
 * Fixed Mac OSX version detection
 * Removed allowed failure for PHP 7 in Travis
+* Fixed utf8 chars for Windows notifiers
 
 ## 1.0.3 (2015-06-03)
 
